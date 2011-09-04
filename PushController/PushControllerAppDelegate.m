@@ -7,6 +7,7 @@
 //
 
 #import "PushControllerAppDelegate.h"
+#import <Security/Security.h>
 
 @implementation PushControllerAppDelegate
 
@@ -241,22 +242,23 @@
 
 }
 
-- (IBAction)pushMessage:(id)sender {
+- (IBAction)pushMessage:(id)sender
+{    
     NSInteger row = [tableView selectedRow];
-    if (row == -1) {
+    if (row == -1)
         return;
-    }
     NSString *msgText = [messageField stringValue];
     NSData *token = [[registeredUsers objectAtIndex:row] objectForKey:@"token"];
     
     NSData *data = [self notificationDataForMessage:msgText token:token];
-    
     [writeStream write:[data bytes] maxLength:[data length]];
 }
-
-- (void)stream:(NSStream *)aStream handleEvent:(NSStreamEvent)eventCode {
-    switch (eventCode) {
-        case NSStreamEventHasBytesAvailable: {
+- (void)stream:(NSStream *)aStream handleEvent:(NSStreamEvent)eventCode
+{
+    switch (eventCode)
+    {
+        case NSStreamEventHasBytesAvailable:
+        {
             if (aStream == readStream)
             {
                 // If data came back from the server, we have an error
@@ -299,9 +301,7 @@
         case NSStreamEventEndEncountered:
         {
             NSLog(@"%@ ended - probably closed by server", aStream);
-        } break; 
-        default:
-            break;
+        } break;
     }
 }
 
