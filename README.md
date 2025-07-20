@@ -4,7 +4,10 @@ A SwiftUI package for rendering audio waveforms from WAV files. This package pro
 
 ## Features
 
-- 📊 **Two Waveform Styles**: Line-based and bar-based waveform visualizations
+- 📊 **Four Waveform Styles**: Line and bar visualizations, with and without playback controls
+- 🎵 **Audio Playback**: Built-in audio player with play, pause, stop, and seek functionality
+- 🎯 **Interactive Waveforms**: Tap or drag on waveforms to seek to specific positions
+- 📈 **Progress Visualization**: Real-time progress indication with customizable colors
 - 🎨 **Customizable Appearance**: Colors, line width, bar spacing, and more
 - ⚡ **Async Processing**: Non-blocking audio file processing
 - 🔄 **Format Support**: Handles various audio formats with automatic conversion
@@ -82,6 +85,58 @@ WaveformBarView(
     barSpacing: 2.0
 )
 .frame(height: 200)
+```
+
+### Playback Waveform (Line Style)
+
+```swift
+PlaybackWaveformView(audioURL: audioURL)
+    .frame(height: 150)
+```
+
+### Customized Playback Waveform (Bar Style)
+
+```swift
+PlaybackWaveformBarView(
+    audioURL: audioURL,
+    waveformColor: .gray,
+    progressColor: .blue,
+    backgroundColor: .black.opacity(0.1),
+    barWidth: 3.0,
+    barSpacing: 1.5,
+    showPlayButton: true
+)
+.frame(height: 180)
+```
+
+### Using the AudioPlayer Directly
+
+```swift
+@StateObject private var audioPlayer = AudioPlayer(audioURL: audioURL)
+
+var body: some View {
+    VStack {
+        // Custom UI using the audio player
+        Button(audioPlayer.playbackState == .playing ? "Pause" : "Play") {
+            audioPlayer.togglePlayPause()
+        }
+        
+        Text("Progress: \(Int(audioPlayer.progress * 100))%")
+        
+        Slider(value: .constant(audioPlayer.progress), in: 0...1) { _ in
+            // Handle seeking
+        } onEditingChanged: { editing in
+            if !editing {
+                audioPlayer.seek(to: audioPlayer.progress)
+            }
+        }
+    }
+    .onAppear {
+        Task {
+            await audioPlayer.loadAudio()
+        }
+    }
+}
 ```
 
 ### Complete Example
@@ -182,6 +237,58 @@ public init(
 - `barWidth`: Width of each bar (default: 3.0)
 - `barSpacing`: Spacing between bars (default: 1.0)
 
+### PlaybackWaveformView
+
+A SwiftUI view that renders audio waveforms with playback functionality.
+
+#### Initializer
+
+```swift
+public init(
+    audioURL: URL,
+    waveformColor: Color = .gray,
+    progressColor: Color = .blue,
+    backgroundColor: Color = .clear,
+    lineWidth: CGFloat = 2.0,
+    showPlayButton: Bool = true
+)
+```
+
+**Parameters:**
+- `audioURL`: URL to the WAV audio file
+- `waveformColor`: Color of the unplayed waveform (default: gray)
+- `progressColor`: Color of the played portion (default: blue)
+- `backgroundColor`: Background color of the view (default: clear)
+- `lineWidth`: Width of the waveform lines (default: 2.0)
+- `showPlayButton`: Whether to show playback controls (default: true)
+
+### PlaybackWaveformBarView
+
+A SwiftUI view that renders audio waveforms as bars with playback functionality.
+
+#### Initializer
+
+```swift
+public init(
+    audioURL: URL,
+    waveformColor: Color = .gray,
+    progressColor: Color = .blue,
+    backgroundColor: Color = .clear,
+    barWidth: CGFloat = 3.0,
+    barSpacing: CGFloat = 1.0,
+    showPlayButton: Bool = true
+)
+```
+
+**Parameters:**
+- `audioURL`: URL to the WAV audio file
+- `waveformColor`: Color of the unplayed bars (default: gray)
+- `progressColor`: Color of the played portion bars (default: blue)
+- `backgroundColor`: Background color of the view (default: clear)
+- `barWidth`: Width of each bar (default: 3.0)
+- `barSpacing`: Spacing between bars (default: 1.0)
+- `showPlayButton`: Whether to show playback controls (default: true)
+
 ### WaveformProcessor
 
 A utility class for processing audio files and extracting waveform data.
@@ -202,6 +309,47 @@ public enum WaveformError: Error, LocalizedError {
     case unsupportedFormat
     case processingFailed(String)
     case noAudioData
+}
+```
+
+### AudioPlayer
+
+An observable audio player class that provides playback functionality.
+
+#### Initialization
+
+```swift
+public init(audioURL: URL)
+```
+
+#### Published Properties
+
+- `playbackState: PlaybackState` - Current playback state
+- `currentTime: TimeInterval` - Current playback time in seconds
+- `duration: TimeInterval` - Total audio duration in seconds
+- `progress: Double` - Playback progress (0.0 to 1.0)
+
+#### Methods
+
+```swift
+public func loadAudio() async
+public func play()
+public func pause()
+public func stop()
+public func seek(to time: TimeInterval)
+public func seek(to progress: Double)
+public func togglePlayPause()
+```
+
+#### PlaybackState
+
+```swift
+public enum PlaybackState: Equatable {
+    case stopped
+    case playing
+    case paused
+    case loading
+    case error(String)
 }
 ```
 
